@@ -7,5 +7,5 @@ def run_all_simulations(path):
             data_dict = loading_variables(os.path.join(p, file))
 
 if __name__ == '__main__':
-    path = r'C:\Users\Mairon\Desktop\Simulacoes_Python'
+    path = r'C:\Users\Mairon\Desktop\Simulacoes_Python\SI_FAIResistencia_N3819_S0_FA_T2'
     run_all_simulations(path)
