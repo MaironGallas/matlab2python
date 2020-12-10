@@ -96,12 +96,11 @@ def distancia_estimada(data, Vfalta, H1):
         if distancia[i] > 14000 or distancia[i] < 0:
             distancia[i] = 0
 
-
     return distancia
 
 
 if __name__ == '__main__':
-    data = loading_variables(r'C:\Users\Mairon\Desktop\Simulacoes_Python\SI_FAIResistencia_N5261_S0_FA_T1')
+    data = loading_variables(r'C:\Users\Mairon\Desktop\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python\SI_FAIResistencia_N5261_S0_FA_T1')
     dIdt = calculo_derivadas(data, R, L)
     H1 = calculo_queda_tensão(data, dIdt, R, L)
     Vfalta = classificador(data, 1)
