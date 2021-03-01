@@ -2,6 +2,7 @@ import numpy as np
 from loading_simulations import loading_variables
 import scipy.interpolate as interpolate
 import matplotlib.pyplot as plt
+from fourier import fft
 
 # print(np.asarray(time).shape) Printa o shape só para salvar
 
@@ -54,12 +55,31 @@ def calculo_derivadas(data, R, L):
 
     return dIdt
 
+
 def calculo_queda_tensão(data, dIdt, R, L):
 
     matriz_correntes = np.array([[data['Ia']], [data['Ib']], [data['Ic']]]).reshape(3, len(data['time']))
     H1 = ((R.dot(matriz_correntes)) + (L.dot(dIdt.T))).T
 
     return H1
+
+
+def indice_crossing_zero(H1, newtime):
+
+    registroP = []
+    registroN = []
+    ok = False
+
+    ciclo = 1/60/newtime[1] - newtime[0]
+
+    for i in range(2000002, 2050002, 1):
+        if (H1[i] < 0) and (H1[i - 1] > 0):
+            registroP.append(i)
+            ok = True
+        if (H1[i] > 0) and (H1[i - 1] < 0) and ok:
+            registroN.append(i)
+
+    return registroP, registroN
 
 def classificador(data, fase):
 
@@ -100,11 +120,12 @@ def distancia_estimada(data, Vfalta, H1):
 
 
 if __name__ == '__main__':
-    data = loading_variables(r'C:\Users\Mairon\Desktop\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python\SI_FAIResistencia_N5261_S0_FA_T1')
-    dIdt = calculo_derivadas(data, R, L)
-    H1 = calculo_queda_tensão(data, dIdt, R, L)
-    Vfalta = classificador(data, 1)
-    H1, Vfalta, new_time = interpolacao(data, Vfalta, H1)
-    distancia = distancia_estimada(data, Vfalta, H1)
-    plt.plot(new_time,distancia, data['time'], data['Ifalta_fonte']*200)
-    plt.show()
+    data = loading_variables(r'D:\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python\SI_FAIResistencia_N5261_S0_FA_T1')
+    """dIdt = calculo_derivadas(data, R, L)
+    H1 = calculo_queda_tensão(data, dIdt, R, L)"""
+    a, fase = fft(data['Vc'], data['time'], 60, 128)
+    print(fase)
+    """Vsubfalta = classificador(data, 1)
+    H1, Vsubfalta, new_time = interpolacao(data, Vsubfalta, H1)
+    distancia = distancia_estimada(data, Vsubfalta, H1)
+    indiceP, indiceN = indice_crossing_zero(H1, new_time)"""

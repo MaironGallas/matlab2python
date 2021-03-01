@@ -11,7 +11,7 @@ def run_all_simulations(path):
     return data_dict_array
 
 if __name__ == '__main__':
-    path = r'C:\Users\Mairon\Desktop\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python'
+    path = r'D:\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python'
     simulations = run_all_simulations(path)
     plt.plot(simulations[1]["time"], simulations[1]["Ifalta_fonte"], simulations[50]["time"], simulations[50]["Ifalta_fonte"])
     plt.show()
