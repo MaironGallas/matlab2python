@@ -1,5 +1,5 @@
 import numpy as np
-
+import math
 
 def fft(data, time, frequencia, amostragem):
 
@@ -45,7 +45,7 @@ def fft_angle_build(fftA, fftRef, pv):
     while xRef >= 180:
         xRef = xRef - 360
 
-    while xRef <= 180:
+    while xRef <= -180:
         xRef = xRef + 360
 
     gallas = x - xRef
@@ -65,7 +65,7 @@ def referencia(data, frequencia, time):
     ref = np.zeros((len(data), 1))
 
     for i in range(0, len(data), 1):
-        ref[i] = np.cos(w*time[i])
+        ref[i] = np.sin(w*time[i])
 
     return ref
 
@@ -74,17 +74,17 @@ def fft_mod_angle(data, amostragem, pv, Cfc, Cfs, constante_2):
 
     fftR = 0
     fftI = 0
-    decremento_amostragem = amostragem-1
+    decremento_amostragem = 0
     a = pv - amostragem
-    for i in range(pv, a, -1):
+    for i in range(a, pv, 1):
         fftR = fftR + data[i]*Cfc[decremento_amostragem]
         fftI = fftI + data[i]*Cfs[decremento_amostragem]
-        decremento_amostragem = decremento_amostragem - 1
+        decremento_amostragem = decremento_amostragem + 1
 
     fftR = constante_2*fftR
     fftI = constante_2*fftI
 
-    fftA = np.arctan2(fftI, fftR)*57.295779
+    fftA = math.atan2(fftI, fftR)*57.295779
     fftM = np.sqrt(fftR*fftR+(fftI*fftI))
 
     return fftM, fftA

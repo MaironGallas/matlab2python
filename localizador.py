@@ -95,6 +95,42 @@ def classificador(data, fase):
 
     return Vfalta
 
+def signal_recomp(data):
+
+    Va_modulo, Va_fase = fft(data['Va'], data['time'], 60, 128)
+    Vb_modulo, Vb_fase = fft(data['Vb'], data['time'], 60, 128)
+    Vc_modulo, Vc_fase = fft(data['Vc'], data['time'], 60, 128)
+
+    Ia_modulo, Ia_fase = fft(data['Ia'], data['time'], 60, 128)
+    Ib_modulo, Ib_fase = fft(data['Ib'], data['time'], 60, 128)
+    Ic_modulo, Ic_fase = fft(data['Ic'], data['time'], 60, 128)
+
+    print(len(Ia_modulo))
+    print(len(Ia_fase))
+
+    Va1H = np.zeros((len(Ia_modulo), 1))
+    Vb1H = np.zeros((len(Ia_modulo), 1))
+    Vc1H = np.zeros((len(Ia_modulo), 1))
+    Ia1H = np.zeros((len(Ia_modulo), 1))
+    Ib1H = np.zeros((len(Ia_modulo), 1))
+    Ic1H = np.zeros((len(Ia_modulo), 1))
+
+
+    for i in range(0, len(Ia_modulo), 1):
+        Va1H[i] = Va_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Va_fase[i]*(np.pi/180))
+        Vb1H[i] = Vb_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Vb_fase[i]*(np.pi/180))
+        Vc1H[i] = Vc_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Vc_fase[i]*(np.pi/180))
+
+        Ia1H[i] = Ia_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Ia_fase[i]*(np.pi/180))
+        Ib1H[i] = Ib_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Ib_fase[i]*(np.pi/180))
+        Ic1H[i] = Ic_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Ic_fase[i]*(np.pi/180))
+
+    data_1h = {'Va': Va1H, 'Vb': Vb1H, 'Vc': Vc1H,
+               'Ia': Ia1H, 'Ib': Ib1H, 'Ic': Ic1H}
+
+    return data_1h
+
+
 def interpolacao(data, Vfalta, H1):
     time = data['time'][:, 0]
     Vfalta = Vfalta[:, 0]
@@ -123,8 +159,11 @@ if __name__ == '__main__':
     data = loading_variables(r'D:\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python\SI_FAIResistencia_N5261_S0_FA_T1')
     """dIdt = calculo_derivadas(data, R, L)
     H1 = calculo_queda_tensão(data, dIdt, R, L)"""
-    a, fase = fft(data['Vc'], data['time'], 60, 128)
-    print(fase)
+    data_1h = signal_recomp(data)
+    plt.plot(data_1h['Va'])
+    plt.plot(data_1h['Vb'])
+    plt.plot(data_1h['Vc'])
+    plt.show()
     """Vsubfalta = classificador(data, 1)
     H1, Vsubfalta, new_time = interpolacao(data, Vsubfalta, H1)
     distancia = distancia_estimada(data, Vsubfalta, H1)
