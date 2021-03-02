@@ -31,15 +31,15 @@ L = np.array([[2.67788713662241e-06, 1.58358549440546e-06, 1.58358549440546e-06]
 def calculo_derivadas(data, R, L):
 
     #Inicializa vetores
-    dVdt = np.zeros((len(data['time']), 3))
-    dV2dt = np.zeros((len(data['time']), 3))
-    dIdt = np.zeros((len(data['time']), 3))
+    dVdt = np.zeros((len(data['Va']), 3))
+    dV2dt = np.zeros((len(data['Va']), 3))
+    dIdt = np.zeros((len(data['Va']), 3))
 
     # Passo de tempo
     dt = data['time'][1] - data['time'][0]
 
     #Calcula Derivadas
-    for i in range(1, len(data['time']), 1):
+    for i in range(1, len(data['Va']), 1):
         # Primeira Derivada da Tensão
         dVdt[i, 0] = (data['Va'][i] - data['Va'][i-1])/dt
         dVdt[i, 1] = (data['Vb'][i] - data['Vb'][i-1])/dt
@@ -58,7 +58,7 @@ def calculo_derivadas(data, R, L):
 
 def calculo_queda_tensão(data, dIdt, R, L):
 
-    matriz_correntes = np.array([[data['Ia']], [data['Ib']], [data['Ic']]]).reshape(3, len(data['time']))
+    matriz_correntes = np.array([[data['Ia']], [data['Ib']], [data['Ic']]]).reshape(3, len(data['Va']))
     H1 = ((R.dot(matriz_correntes)) + (L.dot(dIdt.T))).T
 
     return H1
@@ -73,10 +73,10 @@ def indice_crossing_zero(H1, newtime):
     ciclo = 1/60/newtime[1] - newtime[0]
 
     for i in range(2000002, 2050002, 1):
-        if (H1[i] < 0) and (H1[i - 1] > 0):
+        if (H1[i] < 0) and (H1[i + 1] > 0):
             registroP.append(i)
             ok = True
-        if (H1[i] > 0) and (H1[i - 1] < 0) and ok:
+        if (H1[i] > 0) and (H1[i + 1] < 0) and ok:
             registroN.append(i)
 
     return registroP, registroN
@@ -84,13 +84,13 @@ def indice_crossing_zero(H1, newtime):
 def classificador(data, fase):
 
     if fase == 1:
-        Ifalta = data['Ifalta_fonte']
+        Ifalta = data['Ia']
         Vfalta = data['Va']
     elif fase == 2:
-        Ifalta = data['Ifalta_fonte']
+        Ifalta = data['Ib']
         Vfalta = data['Vb']
     else:
-        Ifalta = data['Ifalta_fonte']
+        Ifalta = data['Ic']
         Vfalta = data['Vc']
 
     return Vfalta
@@ -104,9 +104,6 @@ def signal_recomp(data):
     Ia_modulo, Ia_fase = fft(data['Ia'], data['time'], 60, 128)
     Ib_modulo, Ib_fase = fft(data['Ib'], data['time'], 60, 128)
     Ic_modulo, Ic_fase = fft(data['Ic'], data['time'], 60, 128)
-
-    print(len(Ia_modulo))
-    print(len(Ia_fase))
 
     Va1H = np.zeros((len(Ia_modulo), 1))
     Vb1H = np.zeros((len(Ia_modulo), 1))
@@ -125,21 +122,22 @@ def signal_recomp(data):
         Ib1H[i] = Ib_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Ib_fase[i]*(np.pi/180))
         Ic1H[i] = Ic_modulo[i] * np.sin(2 * np.pi * 60 * data['time'][i] + Ic_fase[i]*(np.pi/180))
 
+
     data_1h = {'Va': Va1H, 'Vb': Vb1H, 'Vc': Vc1H,
-               'Ia': Ia1H, 'Ib': Ib1H, 'Ic': Ic1H}
+               'Ia': Ia1H, 'Ib': Ib1H, 'Ic': Ic1H,
+               'time': data['time'][128:, 0]}
 
     return data_1h
 
 
 def interpolacao(data, Vfalta, H1):
-    time = data['time'][:, 0]
     Vfalta = Vfalta[:, 0]
     H1 = H1[:, 0]
 
-    new_x = np.arange(time[0], time[len(time)-1], 1E-6)
+    new_x = np.arange(data['time'][0], data['time'][len(data['time'])-1], 1E-6)
 
-    H1_interpolado = interpolate.interp1d(time, H1, kind='cubic')(new_x)
-    Vfalta_interpolado = interpolate.interp1d(time, Vfalta, kind='cubic')(new_x)
+    H1_interpolado = interpolate.interp1d(data['time'], H1, kind='cubic')(new_x)
+    Vfalta_interpolado = interpolate.interp1d(data['time'], Vfalta, kind='cubic')(new_x)
 
     return H1_interpolado, Vfalta_interpolado, new_x
 
@@ -157,14 +155,11 @@ def distancia_estimada(data, Vfalta, H1):
 
 if __name__ == '__main__':
     data = loading_variables(r'D:\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python\SI_FAIResistencia_N5261_S0_FA_T1')
-    """dIdt = calculo_derivadas(data, R, L)
-    H1 = calculo_queda_tensão(data, dIdt, R, L)"""
     data_1h = signal_recomp(data)
-    plt.plot(data_1h['Va'])
-    plt.plot(data_1h['Vb'])
-    plt.plot(data_1h['Vc'])
-    plt.show()
-    """Vsubfalta = classificador(data, 1)
-    H1, Vsubfalta, new_time = interpolacao(data, Vsubfalta, H1)
-    distancia = distancia_estimada(data, Vsubfalta, H1)
-    indiceP, indiceN = indice_crossing_zero(H1, new_time)"""
+    dIdt = calculo_derivadas(data_1h, R, L)
+    H1 = calculo_queda_tensão(data_1h, dIdt, R, L)
+    Vsubfalta = classificador(data_1h, 1)
+    H1, Vsubfalta, new_time = interpolacao(data_1h, Vsubfalta, H1)
+    indiceP, indiceN = indice_crossing_zero(H1, new_time)
+    #istancia = distancia_estimada(data, Vsubfalta, H1)
+    indiceP, indiceN = indice_crossing_zero(H1, new_time)

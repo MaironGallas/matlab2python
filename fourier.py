@@ -19,8 +19,6 @@ def fft(data, time, frequencia, amostragem):
         Cfc[i] = np.cos(angle)
         Cfs[i] = - np.sin(angle)
 
-    #ref = np.zeros((len(data), 1))
-
     ref = referencia(data, frequencia, time)
 
     for i in range(amostragem, len(data), 1):
