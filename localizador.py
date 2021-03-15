@@ -3,7 +3,7 @@ from loading_simulations import loading_variables
 import scipy.interpolate as interpolate
 import matplotlib.pyplot as plt
 from fourier import fft
-
+from scipy.optimize import curve_fit
 # print(np.asarray(time).shape) Printa o shape só para salvar
 
 
@@ -81,6 +81,24 @@ def indice_crossing_zero(H1, newtime):
 
     return registroP, registroN
 
+def pontos_otimizar(Vsub, registroP, registroN):
+    pontos = np.zeros((5, 2), dtype=np.int32)
+    pontos2 = np.zeros((5, 1), dtype=np.float32)
+
+    pontos[:, 0] = [registroP[0], registroN[0], registroP[1],registroN[1], registroP[2]]
+    pontos2[:, 0] = [Vsub[pontos[0, 0]], Vsub[pontos[1, 0]], Vsub[pontos[2, 0]], Vsub[pontos[3, 0]], Vsub[pontos[4, 0]]]
+
+    pontos[0, 1] = 1
+    pontos[1, 1] = pontos[1, 0] - pontos[0, 0] + pontos[0, 1]
+    pontos[2, 1] = pontos[2, 0] - pontos[1, 0] + pontos[1, 1]
+    pontos[3, 1] = pontos[3, 0] - pontos[2, 0] + pontos[2, 1]
+    pontos[4, 1] = pontos[4, 0] - pontos[3, 0] + pontos[3, 1]
+
+    xdata = pontos[:, 1]
+    ydata = pontos2[:, 0]
+
+    return xdata, ydata
+
 def classificador(data, fase):
 
     if fase == 1:
@@ -129,7 +147,6 @@ def signal_recomp(data):
 
     return data_1h
 
-
 def interpolacao(data, Vfalta, H1):
     Vfalta = Vfalta[:, 0]
     H1 = H1[:, 0]
@@ -153,13 +170,24 @@ def distancia_estimada(data, Vfalta, H1):
     return distancia
 
 
+def func2(xdata, a, b):
+    return a*np.sin(np.pi*(xdata-b/8333.46406))
+
+
 if __name__ == '__main__':
+
+
     data = loading_variables(r'D:\Mairon\Algoritimo Localizador de Falta\Simulacoes_Python\SI_FAIResistencia_N5261_S0_FA_T1')
     data_1h = signal_recomp(data)
     dIdt = calculo_derivadas(data_1h, R, L)
     H1 = calculo_queda_tensão(data_1h, dIdt, R, L)
     Vsubfalta = classificador(data_1h, 1)
     H1, Vsubfalta, new_time = interpolacao(data_1h, Vsubfalta, H1)
+    plt.plot(H1)
+    plt.show()
+
     indiceP, indiceN = indice_crossing_zero(H1, new_time)
-    #istancia = distancia_estimada(data, Vsubfalta, H1)
-    indiceP, indiceN = indice_crossing_zero(H1, new_time)
+    xdata, ydata = pontos_otimizar(Vsubfalta, indiceP, indiceN)
+    popt, pcov = curve_fit(func2, xdata, ydata, bounds=([10335, 1407], [11000, 2000]), method='trf')
+    print(popt)
+    print(pcov)
